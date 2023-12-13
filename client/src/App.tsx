@@ -19,7 +19,10 @@ const App: React.FC = () => {
 
   const formatNumber = (value: string): string => {
     const cleanedValue = value.replace(/[^\d-]/g, "");
-    let formattedValue = cleanedValue.replace(/(\d{2})(\d{2})/g, "$1-$2");
+    let formattedValue = cleanedValue.replace(
+      /(\d{2})(\d{2})(\d{2})/g,
+      "$1-$2-$3"
+    );
 
     if (formattedValue.length >= 8) {
       formattedValue = formattedValue.substring(0, 8);
@@ -39,20 +42,12 @@ const App: React.FC = () => {
     );
   };
 
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatNumber(e.target.value);
-    if (validateNumber(formattedValue)) {
-      setValidNumber(true);
-    } else {
-      setValidNumber(false);
-    }
-    setNumber(formattedValue);
-  };
-
   const handleEmailChane = (e: React.ChangeEvent<HTMLInputElement>) => {
     const emailValue = e.target.value.trim();
+
     if (validateEmail(emailValue)) {
       setValidEmail(true);
+      setEmptyEmail(false);
     } else {
       if (emailValue === "") {
         setEmptyEmail(true);
@@ -65,13 +60,20 @@ const App: React.FC = () => {
     setEmail(emailValue);
   };
 
-  useEffect(() => {
-    validNumber ? console.log("Validno") : console.log("Not");
-  }, [validNumber]);
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatNumber(e.target.value);
+    if (validateNumber(formattedValue)) {
+      setValidNumber(true);
+    } else {
+      setValidNumber(false);
+    }
+    setNumber(formattedValue);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmited(true);
+
     if (!validNumber || !validEmail || emptyEmail) {
       alert("The form failed validation!");
       return;
@@ -99,7 +101,6 @@ const App: React.FC = () => {
 
       const data: UserData[] = await response.json();
       setResult(data);
-      setIsSubmited(false);
     } catch (fetchError: any) {
       if (fetchError.name === "AbortError") {
         console.log("Request canceled.");
@@ -108,33 +109,55 @@ const App: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setIsSubmited(false);
     }
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <label>Email:</label>
-        <input type="email" value={email} onChange={handleEmailChane} />
-        {emptyEmail && isSubmited && <p>Required field</p>}
-        {!validEmail && isSubmited && <p>Invalid email</p>}
-        <br />
+    <div className="page">
+      <h1 className="head">The search form</h1>
+      <form onSubmit={handleSubmit} className="form">
+        <label className="label">Email:</label>
+        <input
+          type="text"
+          className="input"
+          value={email}
+          onChange={handleEmailChane}
+        />
+        <div className="errorBox">
+          {emptyEmail && isSubmited && <p className="error">Required field</p>}
+          {!validEmail && isSubmited && <p className="error">Invalid email</p>}
+        </div>
 
-        <label>Number:</label>
-        <input type="text" value={number} onChange={handleNumberChange} />
-        {!validNumber && isSubmited && <p>Invalid number</p>}
-        <br />
+        <label className="label">Number:</label>
+        <input
+          type="text"
+          className="input"
+          value={number}
+          onChange={handleNumberChange}
+        />
+        <div className="errorBox">
+          {!validNumber && isSubmited && (
+            <p className="error">Invalid number</p>
+          )}
+        </div>
 
-        <button type="submit">
+        <button type="submit" className="button">
           {!loading ? "Request" : "Cancel the request"}
         </button>
       </form>
 
-      {loading && <p>Loading...</p>}
-      {result.length > 0 && (
-        <div>
-          <p>Query results:</p>
-          {result.map((userData, index) => (
+      <h2 className="headInfo">
+        {loading ? (
+          <p className="textInfo">Loading...</p>
+        ) : (
+          <p className="textInfo">Query results:</p>
+        )}
+      </h2>
+
+      <div className="output">
+        {result.length > 0 &&
+          result.map((userData, index) => (
             <p key={index}>{`${index + 1}. email: ${
               userData.email
             }, phone number: ${userData.number.replace(
@@ -142,8 +165,7 @@ const App: React.FC = () => {
               "$1-$2-$3"
             )}`}</p>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 };
