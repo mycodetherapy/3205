@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 
 interface UserData {
   email: string;
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [validEmail, setValidEmail] = useState<boolean>(true);
   const [emptyEmail, setEmptyEmail] = useState<boolean>(true);
   const [isSubmited, setIsSubmited] = useState<boolean>(false);
+  const [emptyResult, setEmptyResult] = useState<string>("");
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const formatNumber = (value: string): string => {
@@ -75,18 +76,19 @@ const App: React.FC = () => {
     setIsSubmited(true);
 
     if (!validNumber || !validEmail || emptyEmail) {
-      alert("The form failed validation!");
       return;
     }
+
+    setLoading(true);
+    setEmptyResult("");
+    setResult([]);
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    const newAbortController = new AbortController();
+    let newAbortController = new AbortController();
     abortControllerRef.current = newAbortController;
-
-    setLoading(true);
 
     try {
       number = number.replace(/\D/g, "");
@@ -100,6 +102,7 @@ const App: React.FC = () => {
       });
 
       const data: UserData[] = await response.json();
+      !data.length && setEmptyResult("Nothing found");
       setResult(data);
     } catch (fetchError: any) {
       if (fetchError.name === "AbortError") {
@@ -108,6 +111,9 @@ const App: React.FC = () => {
         console.error("Query error:", fetchError);
       }
     } finally {
+      if (abortControllerRef.current) {
+        abortControllerRef.current = null;
+      }
       setLoading(false);
       setIsSubmited(false);
     }
@@ -156,7 +162,7 @@ const App: React.FC = () => {
       </h2>
 
       <div className="output">
-        {result.length > 0 &&
+        {result.length > 0 ? (
           result.map((userData, index) => (
             <p key={index}>{`${index + 1}. email: ${
               userData.email
@@ -164,7 +170,10 @@ const App: React.FC = () => {
               /(\d{2})(\d{2})(\d{2})/g,
               "$1-$2-$3"
             )}`}</p>
-          ))}
+          ))
+        ) : (
+          <p>{emptyResult}</p>
+        )}
       </div>
     </div>
   );

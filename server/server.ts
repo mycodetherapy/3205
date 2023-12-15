@@ -31,24 +31,25 @@ app.post("/api/search", async (req: Request, res: Response) => {
 
   const timeoutId = setTimeout(() => {
     abortEmitter = null;
-
     const result: UserData[] = data.filter(
       (user) =>
         user.email.toLowerCase() === email.toLowerCase() &&
         (!number || user.number === number)
     );
-
     res.json(result);
   }, 5000);
 
   abortEmitter.once("abort", () => {
     clearTimeout(timeoutId);
     res.status(500).json({ error: "Request aborted" });
+
+    //Instead of throwing an error, there may be some logic here
+    throw new Error("Request aborted");
   });
 });
 
 app.listen(port, () => {
-  console.log(`Сервер запущен на порту ${port}`);
+  console.log(`The server is running on port: ${port}`);
 });
 
 const data: UserData[] = [
@@ -59,5 +60,5 @@ const data: UserData[] = [
   { email: "jams@gmail.com", number: "141424" },
   { email: "jill@gmail.com", number: "822287" },
   { email: "jill@gmail.com", number: "822286" },
-  { email: "john@gmail.com", number: "22112266666" },
+  { email: "john@gmail.com", number: "221122" },
 ];
